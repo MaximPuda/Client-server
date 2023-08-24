@@ -1,22 +1,27 @@
-using System;
 using UnityEngine;
 using UnityEngine.Events;
 
-[RequireComponent(typeof(PlayerInput), typeof(Collider2D))]
+[RequireComponent(typeof(PlayerInput), typeof(Collider2D), typeof(AudioSource))]
 public class PlayerController : MonoBehaviour
 {
     [SerializeField] private float _startLife = 1;
     [SerializeField] private float _speed = 20f;
     [SerializeField] private Gun _gun;
 
+    [Header("Sounds")]
+    [SerializeField] private AudioClip _death;
+
     public UnityAction<Vector2> MoveEvent;
+    public UnityAction<Vector2> AimEvent;
     public UnityAction<float> GetDamageEvent;
     public UnityAction<int> GetCoinEvent;
     public UnityAction DeathEvent;
 
     private PlayerInput _input;
-    private Vector2 _direction;
     private Collider2D _collider;
+    private AudioSource _sound;
+    
+    private Vector2 _moveDirection;
 
     private float _currentLife;
     private int _currentCoins;
@@ -26,6 +31,7 @@ public class PlayerController : MonoBehaviour
     {
         _input = GetComponent<PlayerInput>();
         _collider = GetComponent<Collider2D>();
+        _sound = GetComponent<AudioSource>();
         _currentLife = _startLife;
     }
 
@@ -37,38 +43,37 @@ public class PlayerController : MonoBehaviour
 
     private void OnEnable()
     {
-        _input.MoveEvent += SetDirection;
+        _input.MoveEvent += SetMoveDirection;
+        _input.AimEvent += Aim;
         _input.FireEvent += Shoot;
     }
 
     private void OnDisable()
     {
-        _input.MoveEvent -= SetDirection;
+        _input.MoveEvent -= SetMoveDirection;
+        _input.AimEvent -= Aim;
         _input.FireEvent -= Shoot;
     }
 
     private void Update()
     {
         Move();
-        Aim();
     }
     #endregion
 
-    private void SetDirection(Vector2 direction)
+    private void SetMoveDirection(Vector2 direction)
     {
-        _direction = direction;
+        _moveDirection = direction;
     }
 
     private void Move()
     {
-        transform.Translate(_direction * _speed * Time.deltaTime);
-        MoveEvent?.Invoke(_direction);
+        transform.Translate(_moveDirection * _speed * Time.deltaTime);
+        MoveEvent?.Invoke(_moveDirection);
     }
 
-    private void Aim()
+    private void Aim(Vector2 aim)
     {
-        Vector2 aim = _direction.normalized;
-
         if(aim.x < 0)
         {
             _gun.transform.localScale = new Vector3(-1, 1, 1);
@@ -79,6 +84,8 @@ public class PlayerController : MonoBehaviour
             _gun.transform.right = aim;
             _gun.transform.localScale = new Vector3(1, 1, 1);
         }
+
+        AimEvent?.Invoke(aim);
     }
 
     private void Shoot()
@@ -108,6 +115,9 @@ public class PlayerController : MonoBehaviour
         _collider.enabled = false;
 
         _gun.Drop();
+
+        _sound.pitch = Random.Range(1f, 1.3f);
+        _sound.PlayOneShot(_death);
 
         DeathEvent?.Invoke();
         

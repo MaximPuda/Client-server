@@ -23,6 +23,7 @@ public class PlayerView : MonoBehaviour
         if (_controller != null)
         {
             _controller.MoveEvent += OnMove;
+            _controller.AimEvent += OnAim;
             _controller.DeathEvent += OnDeath;
             _controller.GetDamageEvent += OnGetDamage;
 
@@ -34,6 +35,7 @@ public class PlayerView : MonoBehaviour
         if (_controller != null)
         {
             _controller.MoveEvent -= OnMove;
+            _controller.AimEvent += OnAim;
             _controller.DeathEvent -= OnDeath;
             _controller.GetDamageEvent -= OnGetDamage;
         }
@@ -41,9 +43,11 @@ public class PlayerView : MonoBehaviour
 
     private void OnMove(Vector2 direction)
     {
-
         _anim.SetFloat("Speed", direction.magnitude);
+    }
 
+    private void OnAim(Vector2 direction) 
+    {
         //Flip sprites
         if (direction.x < 0)
         {
